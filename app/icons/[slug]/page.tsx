@@ -1,0 +1,38 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
+import {
+  BadgeCheck, Check, ChevronRight, Copy, CreditCard, Download, ExternalLink,
+  FileCode2, Link2, Moon, Search, ShieldCheck, ShoppingBag, Sun, Upload,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Slider } from "@/components/ui/slider";
+import { catalogue } from "@/lib/icon-catalogue";
+
+function Logo(){return <span className="brand"><img className="brand-logo" src="/iconnovus-logo.png" alt="IconNovus"/></span>}
+
+export default function IconDetailPage(){
+ const params=useParams<{slug:string}>();const slug=String(params?.slug||"dashboard-grid");
+ const item=catalogue.find(icon=>icon.slug===slug)||{...catalogue[0],slug,name:slug.split("-").map(x=>x[0]?.toUpperCase()+x.slice(1)).join(" "),creator:"IconNovus Studio"};
+ const related=useMemo(()=>[...catalogue.filter(icon=>icon.category===item.category&&icon.slug!==slug),...catalogue.filter(icon=>icon.category!==item.category)].slice(0,8),[item.category,slug]);
+ const [dark,setDark]=useState(false),[size,setSize]=useState(96),[stroke,setStroke]=useState(1.8),[color,setColor]=useState(item.color),[copied,setCopied]=useState(""),[checkout,setCheckout]=useState(false),[purchased,setPurchased]=useState(false);
+ const permalink=useMemo(()=>typeof window==="undefined"?"":window.location.href,[]);
+ useEffect(()=>{document.title=`${item.name} Icon — IconNovus`},[item.name]);
+ function copy(value:string,label:string){navigator.clipboard.writeText(value);setCopied(label);setTimeout(()=>setCopied(""),1200)}
+ return <main className={dark?"dark-ui detail-page":"detail-page"}>
+  <header className="topbar"><a href="/"><Logo/></a><nav><a className="active" href="/icons">Icons</a><a href="/brand-logos">Brand Logos</a><a href="/illustrations">Illustrations</a><a href="/#sell">Creators</a></nav><div className="top-actions"><a className="header-find" href="/icons"><Search/> Find icons</a><a className="header-submit" href="/#sell"><Upload/> Submit icon(s)</a><button className="plain-icon" onClick={()=>setDark(!dark)}>{dark?<Sun/>:<Moon/>}</button></div></header>
+  <div className="detail-wrap">
+   <nav className="breadcrumbs"><a href="/">Home</a><ChevronRight/><a href="/icons">Browse icons</a><ChevronRight/><span>{item.name}</span></nav>
+   <section className="detail-layout">
+    <aside className="identity-panel"><div className="identity-preview" style={{color:item.color}}><item.Icon/></div><h1>{item.name}</h1><p className="updated">Updated today</p><div className="identity-line"><span>By</span><b className="creator-avatar">{item.creator.slice(0,2).toUpperCase()}</b><strong>{item.creator}</strong><BadgeCheck/></div><div className="identity-group"><span>Category</span><a href={`/icons?q=${encodeURIComponent(item.category)}`}>{item.category}</a></div><div className="identity-group"><span>Aliases</span><div>{item.aliases.map(a=><i key={a}>{a}</i>)}</div></div><div className="identity-group"><span>About this icon</span><p>{item.description}</p><p>Available in SVG, PNG, WebP and React formats with a commercial license.</p></div></aside>
+    <section className="variants-panel"><div className="panel-title"><h2>Icon variants</h2><p>Choose a format, then purchase or copy its developer reference.</p></div><h3><FileCode2/> Base icon</h3><p className="variant-note">Original customizable version</p><div className="variant-grid">{["SVG","PNG","WEBP","REACT"].map((format,index)=><article key={format}><div className="variant-preview" style={{color}}><item.Icon size={index===1?84:76} strokeWidth={stroke}/></div><b>{format}</b><small>{format==="SVG"?"Scalable vector":format==="PNG"?"512 × 512 transparent":format==="WEBP"?"512 × 512 optimized":"Lucide-compatible JSX"}</small><div><button onClick={()=>setCheckout(true)} title="Purchase and download"><Download/></button><button onClick={()=>copy(format==="REACT"?`<${item.name.replaceAll(" ","")} size={${size}} />`:permalink,copied===format?"":format)} title="Copy">{copied===format?<Check/>:<Copy/>}</button><button onClick={()=>copy(permalink,"link")} title="Copy link"><Link2/></button></div></article>)}</div><div className="customizer"><div className="customizer-head"><h3>Customize preview</h3><span>{size}px · {stroke.toFixed(1)}px</span></div><div className="customizer-body"><label>Size<Slider min={32} max={160} step={8} value={[size]} onValueChange={v=>setSize(v[0])}/></label><label>Stroke<Slider min={1} max={3} step={.1} value={[stroke]} onValueChange={v=>setStroke(v[0])}/></label><label className="detail-colors">Color<div>{["#11152A","#5B5FEF","#24D6A1","#F05252"].map(c=><button key={c} className={color===c?"active":""} style={{background:c}} onClick={()=>setColor(c)}/>)}<input type="color" value={color} onChange={e=>setColor(e.target.value)}/></div></label></div></div></section>
+    <aside className="technical-panel"><h2>Purchase details</h2><dl><div><dt>Base format</dt><dd>SVG</dd></div><div><dt>Available formats</dt><dd><span>SVG</span><span>PNG</span><span>WebP</span><span>React</span></dd></div><div><dt>License</dt><dd>Commercial</dd></div><div><dt>Price</dt><dd><strong>{"$"}{item.price.toFixed(2)}</strong></dd></div></dl><Button size="lg" onClick={()=>setCheckout(true)}><ShoppingBag/> Add to cart · {"$"}{item.price.toFixed(2)}</Button><button className="share-button" onClick={()=>copy(permalink,"share")}><Link2/> {copied==="share"?"Link copied":"Copy page link"}</button><div className="quality-card"><ShieldCheck/><div><b>IconNovus approved</b><p>Reviewed for clean geometry, safe files and licensing clarity.</p></div></div><div className="creator-box"><span>{item.creator.slice(0,2).toUpperCase()}</span><div><b>{item.creator}</b><small>Verified creator</small></div><a href="/icons">View shop <ExternalLink/></a></div></aside>
+   </section>
+   <section className="related-panel"><div><h2>Related icons</h2><p>More choices from {item.category} and nearby categories.</p></div><div className="related-grid">{related.map(r=><a href={`/icons/${r.slug}`} key={r.id}><span style={{color:r.color}}><r.Icon/></span><b>{r.name}</b><small>{r.category}</small></a>)}</div><a className="view-related" href={`/icons?q=${encodeURIComponent(item.category)}`}>View all related icons <ChevronRight/></a></section>
+  </div>
+  <footer><Logo/><p>Thoughtful assets for people who make things.</p><nav><a href="/icons">Icons</a><a href="/brand-logos">Brand Logos</a><a href="/illustrations">Illustrations</a></nav><small>© 2026 IconNovus</small></footer>
+  <Dialog open={checkout} onOpenChange={setCheckout}><DialogContent><DialogHeader><DialogTitle>{purchased?"Your icon is ready":"Test purchase"}</DialogTitle><DialogDescription>{purchased?"Download access has been added for this preview session.":"No real payment will be collected."}</DialogDescription></DialogHeader>{purchased?<div className="purchase-success"><BadgeCheck/><h3>{item.name} purchased</h3><p>SVG, PNG, WebP and React formats are now available in your downloads.</p><Button onClick={()=>setCheckout(false)}>Done</Button></div>:<form className="form" onSubmit={e=>{e.preventDefault();setPurchased(true)}}><label>Email<input type="email" required placeholder="you@example.com"/></label><label>Card number<div><CreditCard/><input required placeholder="4242 4242 4242 4242"/></div></label><div className="two"><label>Expiry<input required placeholder="12/29"/></label><label>CVC<input required placeholder="123"/></label></div><Button size="lg">Complete test purchase · {"$"}{item.price.toFixed(2)}</Button></form>}</DialogContent></Dialog>
+ </main>
+}
