@@ -1,6 +1,6 @@
 # IconNovus status
 
-Last updated 2026-11-08. Latest register entry [IN-012](RECORD_REGISTER.md).
+Last updated 2026-11-26. Latest register entry [IN-013](RECORD_REGISTER.md).
 
 | Area | Current state |
 | --- | --- |
@@ -8,12 +8,12 @@ Last updated 2026-11-08. Latest register entry [IN-012](RECORD_REGISTER.md).
 | Native inventory | 4,808 listings reference 13,411 files across pinned Dashicon and Homarr Labs revisions. The live-site audit matched all 13,325 native files listed on Dashboard Icons. |
 | Provider inventory | 7,824 listings reference 55,419 files from pinned revisions of selfh.st, LobeHub, and Simple Icons. The app retrieves the images from the provider repositories when requested. |
 | AI brand icons | The brand logo library features six documented `@lobehub/icons` React components that link to the existing catalog downloads. |
-| Latest source package | `IconNovus-source-ai-brand-icons.zip` includes the AI brand section, catalog data, package lock, and both tracking files. |
-| Verification | The Vinext production build passed for the AI brand update. All six icons rendered as SVG and linked to catalog entries. The earlier live sample downloads passed against all three partner providers and a native Shelly asset. |
-| Deployment | The latest changes are in the working source and source package. The Sites connector returned project not found for the ID in `.openai/hosting.json`. |
+| Current source | The Cloudflare preparation update builds on GitHub import `9ef45fe`. Earlier ZIP archives predate this update. |
+| Verification | TypeScript, the production build, all six tests, and local D1 migration pass. Tests exercise the homepage and database in Miniflare, rejected unsigned identity headers, and valid, forged, expired, and wrong-audience Access tokens. |
+| Deployment | Prepared for Workers with D1, R2, and Cloudflare Access. Real database ID, bucket, custom domain, Access application, and administrator email require account configuration. See [CLOUDFLARE.md](CLOUDFLARE.md). |
 | GitHub transfer | The source import targets the `main` branch of [rankint360/IconNovus](https://github.com/rankint360/IconNovus). |
 
-- The standalone TypeScript check reports missing Cloudflare Workers types. Two existing tests report errors involving the Cloudflare runtime import and a CSS scrollbar assertion.
+- Wrangler's deployment dry run failed with a Windows sandbox filesystem access error. The built Worker passed local runtime tests. Production deployment and account-specific authentication require verification after provisioning.
 - npm reported a React peer dependency warning for a transitive LobeHub UI dependency. The featured icons passed rendering and build checks.
 - The native audit found 212 logo pages where some variants were available as separate listings. Shelly’s wordmarks are one example.
 - The partner download verification sampled each provider. The full inventory was verified against the repository file trees.

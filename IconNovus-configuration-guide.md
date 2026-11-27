@@ -1,3 +1,5 @@
+> Current Cloudflare deployment instructions are in [CLOUDFLARE.md](CLOUDFLARE.md). The release notes below describe the original Sites v23 archive.
+
 # IconNovus configuration guide
 
 ## Platform configuration

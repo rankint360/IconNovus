@@ -21,9 +21,12 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
+  if (request.headers.get("origin") && request.headers.get("origin") !== new URL(request.url).origin) {
+    return Response.json({ error: "Cross-origin changes are not allowed." }, { status: 403 });
+  }
   if (!(await requireAdmin())) return Response.json({ error: "Administrator access required." }, { status: 403 });
-  const payload = await request.json() as { id?: number; status?: string };
-  if (!payload.id || !["published", "rejected"].includes(payload.status ?? "")) {
+  const payload = await request.json().catch(() => null) as { id?: number; status?: string } | null;
+  if (!payload || !Number.isSafeInteger(payload.id) || Number(payload.id) <= 0 || !["published", "rejected"].includes(payload.status ?? "")) {
     return Response.json({ error: "A valid submission and review decision are required." }, { status: 400 });
   }
   const row = await env.DB.prepare(

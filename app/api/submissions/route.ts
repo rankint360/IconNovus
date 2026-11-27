@@ -6,6 +6,9 @@ const maxBytes = 10 * 1024 * 1024;
 const clean = (value: string) => value.trim().replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
 
 export async function POST(request: Request) {
+  if (request.headers.get("origin") && request.headers.get("origin") !== new URL(request.url).origin) {
+    return Response.json({ error: "Cross-origin uploads are not allowed." }, { status: 403 });
+  }
   const user = await getChatGPTUser();
   if (!user) return Response.json({ error: "Sign in is required to submit icons." }, { status: 401 });
 
@@ -41,7 +44,9 @@ export async function POST(request: Request) {
     const objectKey = `submissions/${user.id}/${crypto.randomUUID()}-${filename}`;
     await env.BUCKET.put(objectKey, file.stream(), { httpMetadata: { contentType: file.type } });
 
-    const result = await env.DB.prepare(
+    let result;
+    try {
+      result = await env.DB.prepare(
       `INSERT INTO marketplace_icons
        (name, slug, category, style, price_cents, formats, creator_id, creator_email,
         portfolio_url, description, object_key, original_filename, content_type, status)
@@ -49,6 +54,11 @@ export async function POST(request: Request) {
        RETURNING id, name, slug, status, created_at AS createdAt`,
     ).bind(name, slug, category, style, priceCents, filename.split(".").pop()?.toUpperCase() || "FILE",
       user.id, user.email, portfolioUrl || null, description || null, objectKey, filename, file.type).first();
+      if (!result) throw new Error("Submission insert did not return a record");
+    } catch (error) {
+      await env.BUCKET.delete(objectKey);
+      throw error;
+    }
 
     return Response.json({ submission: result }, { status: 201 });
   } catch (error) {

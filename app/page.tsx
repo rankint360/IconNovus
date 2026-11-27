@@ -55,13 +55,26 @@ export default function Home(){
  function copy(i:IconItem){navigator.clipboard.writeText(`<${i.name.replaceAll(" ","")} size={24} />`);setCopied(i.id);setTimeout(()=>setCopied(null),1200)}
  function download(i:IconItem){setSelected(i);setTimeout(()=>{const svg=document.querySelector("#download-source svg")?.cloneNode(true) as SVGElement|undefined;if(!svg)return;svg.setAttribute("xmlns","http://www.w3.org/2000/svg");svg.setAttribute("width",String(size));svg.setAttribute("height",String(size));svg.setAttribute("stroke",color);svg.setAttribute("stroke-width",String(stroke));const u=URL.createObjectURL(new Blob([svg.outerHTML],{type:"image/svg+xml"}));const a=document.createElement("a");a.href=u;a.download=i.name.toLowerCase().replaceAll(" ","-")+".svg";a.click();URL.revokeObjectURL(u)},120)}
  function finish(e:React.FormEvent){e.preventDefault();setPaid(cart);setCart([]);setCheckout(false);setCartOpen(false);setAccountOpen(true)}
- async function submitIcon(e:React.FormEvent<HTMLFormElement>){
-  e.preventDefault();setUploadStatus("Uploading securely…");
-  const response=await fetch("/api/submissions",{method:"POST",body:new FormData(e.currentTarget)});
-  const data=await response.json() as {error?:string};
-  if(!response.ok){setUploadStatus(data.error||"Upload failed. Please try again.");return}
-  setUploadStatus("Submitted successfully. Your icon is waiting for review.");
-  e.currentTarget.reset();
+ async function submitIcon(event: React.FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  setUploadStatus("Uploading securely…");
+  try {
+    const response = await fetch("/api/submissions", { method: "POST", body: new FormData(form) });
+    if (!response.headers.get("content-type")?.includes("application/json")) {
+      setUploadStatus("Sign in before uploading, then select your file again.");
+      return;
+    }
+    const data = await response.json() as { error?: string };
+    if (!response.ok) {
+      setUploadStatus(data.error || "Upload failed. Please try again.");
+      return;
+    }
+    setUploadStatus("Submitted successfully. Your icon is waiting for review.");
+    form.reset();
+  } catch {
+    setUploadStatus("The upload could not finish. Sign in or check your connection, then try again.");
+  }
  }
  return <main className={dark?"dark-ui":""}>
   <header className="topbar">
@@ -124,6 +137,6 @@ export default function Home(){
 
   <Dialog open={accountOpen} onOpenChange={setAccountOpen}><DialogContent><DialogHeader><DialogTitle>Your downloads</DialogTitle><DialogDescription>Purchased icons stay available during this preview session.</DialogDescription></DialogHeader>{paid.length?<div className="download-list">{paid.map(i=><div key={i.id}><span><ItemGlyph item={i} size={26}/></span><div><b>{i.name}</b><small>SVG · PNG · WebP · Commercial license</small></div><Button variant="outline" onClick={()=>download(i)}><Download/> Download</Button></div>)}</div>:<div className="empty small"><Download/><h3>No downloads yet</h3><p>Purchased icons will appear here.</p></div>}</DialogContent></Dialog>
 
-  <Dialog open={uploadOpen} onOpenChange={o=>{setUploadOpen(o);if(!o)setUploadStatus("")}}><DialogContent><DialogHeader><DialogTitle>Submit an icon</DialogTitle><DialogDescription>Upload original work for marketplace review.</DialogDescription></DialogHeader><form className="form" onSubmit={submitIcon}><label>Icon name<input name="name" required placeholder="Example: Analytics dashboard"/></label><div className="two"><label>Category<select name="category" required>{categories.slice(1).map(c=><option key={c}>{c}</option>)}</select></label><label>Style<select name="style" required>{styles.slice(1).map(s=><option key={s}>{s}</option>)}</select></label></div><div className="two"><label>Price<select name="priceCents" defaultValue="100"><option value="0">Free</option><option value="100">$1.00</option><option value="200">$2.00</option><option value="500">$5.00</option></select></label><label>Portfolio URL<input name="portfolioUrl" type="url" placeholder="https://"/></label></div><label className="dropzone"><Upload/><b>Choose icon files</b><small>SVG, PNG, WEBP or ZIP · up to 10 MB</small><input name="file" type="file" accept=".svg,.png,.webp,.zip" required/></label><label>Notes for the reviewer<textarea name="description" placeholder="Mention the icon set, license ownership or variations."/></label>{uploadStatus&&<p className="form-status">{uploadStatus}</p>}<Button size="lg">Submit for review</Button></form></DialogContent></Dialog>
+  <Dialog open={uploadOpen} onOpenChange={o=>{setUploadOpen(o);if(!o)setUploadStatus("")}}><DialogContent><DialogHeader><DialogTitle>Submit an icon</DialogTitle><DialogDescription>Upload original work for marketplace review. <a href="/signin-with-chatgpt?return_to=%2F%23sell">Sign in before uploading</a>.</DialogDescription></DialogHeader><form className="form" onSubmit={submitIcon}><label>Icon name<input name="name" required placeholder="Example: Analytics dashboard"/></label><div className="two"><label>Category<select name="category" required>{categories.slice(1).map(c=><option key={c}>{c}</option>)}</select></label><label>Style<select name="style" required>{styles.slice(1).map(s=><option key={s}>{s}</option>)}</select></label></div><div className="two"><label>Price<select name="priceCents" defaultValue="100"><option value="0">Free</option><option value="100">$1.00</option><option value="200">$2.00</option><option value="500">$5.00</option></select></label><label>Portfolio URL<input name="portfolioUrl" type="url" placeholder="https://"/></label></div><label className="dropzone"><Upload/><b>Choose icon files</b><small>SVG, PNG, WEBP or ZIP · up to 10 MB</small><input name="file" type="file" accept=".svg,.png,.webp,.zip" required/></label><label>Notes for the reviewer<textarea name="description" placeholder="Mention the icon set, license ownership or variations."/></label>{uploadStatus&&<p className="form-status">{uploadStatus}</p>}<Button size="lg">Submit for review</Button></form></DialogContent></Dialog>
  </main>
 }
